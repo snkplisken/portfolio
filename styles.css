@@ -1,0 +1,125 @@
+/* ------------------------------------------- */
+/* 1. Base Body and WebGL Canvas Setup */
+/* ------------------------------------------- */
+body {
+    margin: 0;
+    overflow: hidden; 
+    font-family: Arial, sans-serif;
+}
+
+/* ------------------------------------------- */
+/* 2. Controls Panel Styling (#animations-panel) */
+/* ------------------------------------------- */
+#animations-panel {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: rgba(30, 30, 30, 0.9); /* Darker, slightly transparent background */
+    padding: 10px;
+    border-radius: 8px;
+    z-index: 50;
+    
+    /* Flexbox for cleaner vertical stacking */
+    display: flex;
+    flex-direction: column; 
+    gap: 8px; 
+    width: 200px; /* Defined width for uniformity */
+    box-sizing: border-box; 
+}
+
+/* ⬅️ CRITICAL FIX: Ensure header and text are white/gray and contained */
+#animations-panel h3 {
+    margin: 0 0 5px 0;
+    color: white; /* ⬅️ Color set to white */
+    font-size: 1.1em;
+}
+
+#animations-panel p {
+    margin: 0 0 10px 0;
+    color: #ccc; /* ⬅️ Color set to light gray */
+    font-size: 0.85em;
+    line-height: 1.2;
+}
+
+/* Button Styling (General) */
+#animations-panel button {
+    background-color: rgba(90, 90, 90, 1);
+    color: white;
+    border: none;
+    padding: 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    text-align: center;
+    transition: background-color 0.15s;
+    font-size: 14px;
+    width: 100%;
+    box-sizing: border-box; 
+    margin: 0;
+}
+
+#animations-panel button:hover {
+    background-color: rgba(120, 120, 120, 1);
+}
+
+/* Active State Styling */
+#animations-panel button.active {
+    background-color: #4CAF50;
+    color: white;
+    box-shadow: 0 0 5px #4CAF50;
+}
+
+/* Close Button Specific Styling */
+#close-panel-btn {
+    background-color: #ff4d4d !important;
+    margin-bottom: 8px;
+}
+
+#close-panel-btn:hover {
+    background-color: #cc0000 !important;
+}
+
+/* ------------------------------------------- */
+/* 3. Mobile Joystick Styling */
+/* ------------------------------------------- */
+#joystick-region {
+    position: fixed;
+    bottom: 30px;
+    left: 30px;
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    background-color: rgba(100, 100, 100, 0.4);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    touch-action: none;
+}
+
+#joystick-pad {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: rgba(200, 200, 200, 0.8);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    touch-action: none; 
+}
+
+/* ------------------------------------------- */
+/* 4. Error Banner Styling */
+/* ------------------------------------------- */
+#error-banner {
+    /* If the error banner is displayed: */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding: 10px;
+    background-color: #cc0000;
+    color: white;
+    text-align: center;
+    font-size: 16px;
+    font-weight: bold;
+    display: none;
+    z-index: 2000;
+}

@@ -1,308 +1,48 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Cel-Shaded GLB Model Viewer</title>
-    <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            font-family: 'Inter', sans-serif;
-            background-color: #333;
-            color: #fff;
-        }
-        #ui-container {
-            position: absolute;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            text-align: center;
-            width: 90%;
-            max-width: 500px;
-            padding: 15px;
-            background-color: rgba(0,0,0,0.5);
-            border-radius: 12px;
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            z-index: 10;
-        }
-        #ui-container h2 {
-            margin: 0 0 5px 0;
-        }
-        #ui-container p {
-            margin: 0 0 15px 0;
-            color: #ccc;
-        }
-        .file-input-label, .btn {
-            background-color: #007bff;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: background-color 0.2s;
-            border: none;
-            font-family: 'Inter', sans-serif;
-            font-size: 1em;
-        }
-        .file-input-label:hover, .btn:hover {
-            background-color: #0056b3;
-        }
-        .btn {
-             background-color: #555;
-        }
-        .btn.active {
-            background-color: #007bff;
-        }
-        #file-input {
-            display: none;
-        }
-        #loading-indicator {
-            display: none;
-            margin-top: 10px;
-            font-weight: bold;
-            color: #00e676;
-        }
-        .controls-row {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 10px;
-            margin-top: 10px;
-        }
-        #outline-color-picker {
-            -webkit-appearance: none;
-            -moz-appearance: none;
-            appearance: none;
-            width: 40px;
-            height: 25px;
-            background-color: transparent;
-            border: 1px solid #888;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        #outline-color-picker::-webkit-color-swatch {
-            border-radius: 4px;
-            border: none;
-        }
-        #outline-color-picker::-moz-color-swatch {
-            border-radius: 4px;
-            border: none;
-        }
-        canvas {
-            display: block;
-            width: 100%;
-            height: 100%;
-            position: absolute;
-            top: 0;
-            left: 0;
-        }
-    </style>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Three.js Character + Third-Person (Continuous Forward)</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+  <div id="error-banner"></div>
 
-    <div id="ui-container">
-        <h2>Cel-Shaded Model Viewer</h2>
-        <p>Click object to transform. Click background to orbit camera.</p>
-        <label for="file-input" class="file-input-label">
-            Upload GLB File
-        </label>
-        <input type="file" id="file-input" accept=".glb">
-        <div class="controls-row" id="transform-controls-ui" style="display: none;">
-            <button id="move-btn" class="btn active">Move</button>
-            <button id="rotate-btn" class="btn">Rotate</button>
-        </div>
-        <!-- New control for outline color -->
-        <div class="controls-row">
-            <label for="outline-color-picker">Outline Color</label>
-            <input type="color" id="outline-color-picker" value="#ffffff">
-        </div>
-        <div id="loading-indicator">Loading...</div>
+
+
+  <div id="joystick-region">
+    <div id="joystick-pad"></div>
+</div>
+
+<div id="animations-panel">
+    
+    <h3>Animations</h3>
+    <p>Hold Up: continuous walk • Tap Left/Right/Down: step once • Space: Jump</p>
+    <button id="close-panel-btn">✕ Close Controls</button>
+
     </div>
 
-    <canvas id="c"></canvas>
-
-    <script type="importmap">
-    {
-        "imports": {
-            "three": "https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.module.js",
-            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/"
-        }
+  <!-- Import map for Three.js & addons -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/"
     }
-    </script>
+  }
+  </script>
 
-    <script type="module">
-        import * as THREE from 'three';
-        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-        import { TransformControls } from 'three/addons/controls/TransformControls.js';
-        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
-        import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
-        import { OutlinePass } from 'three/addons/postprocessing/OutlinePass.js';
-        import { FXAAShader } from 'three/addons/shaders/FXAAShader.js';
-
-        // --- SETUP ---
-        const renderer = new THREE.WebGLRenderer({ canvas: document.querySelector('#c'), antialias: true, alpha: true });
-        renderer.outputEncoding = THREE.sRGBEncoding;
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(window.devicePixelRatio);
-
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(0, 1, 5);
-
-        // --- CONTROLS ---
-        const orbitControls = new OrbitControls(camera, renderer.domElement);
-        orbitControls.enableDamping = true;
-
-        const transformControls = new TransformControls(camera, renderer.domElement);
-        scene.add(transformControls);
-
-        // --- POST-PROCESSING (FOR OUTLINE EFFECT) ---
-        const composer = new EffectComposer(renderer);
-
-        const renderPass = new RenderPass(scene, camera);
-        composer.addPass(renderPass);
-
-        const outlinePass = new OutlinePass(new THREE.Vector2(window.innerWidth, window.innerHeight), scene, camera);
-        composer.addPass(outlinePass);
-
-        // Configure the outline's appearance
-        outlinePass.edgeStrength = 4.0;
-        outlinePass.edgeGlow = 0.7;
-        outlinePass.edgeThickness = 2.0;
-        outlinePass.visibleEdgeColor.set('#ffffff'); // Default to white
-        outlinePass.hiddenEdgeColor.set('#333333');
-
-        const effectFXAA = new ShaderPass(FXAAShader);
-        effectFXAA.uniforms['resolution'].value.set(1 / window.innerWidth, 1 / window.innerHeight);
-        composer.addPass(effectFXAA);
-
-
-        // --- LIGHTING ---
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-        scene.add(ambientLight);
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-        directionalLight.position.set(5, 10, 7.5);
-        scene.add(directionalLight);
-        
-        // --- HELPERS ---
-        const gridHelper = new THREE.GridHelper(10, 10, 0x888888, 0x444444);
-        scene.add(gridHelper);
-        const raycaster = new THREE.Raycaster();
-        const pointer = new THREE.Vector2();
-
-        // --- STATE ---
-        let currentModel;
-
-        // --- UI ELEMENTS ---
-        const fileInput = document.getElementById('file-input');
-        const loadingIndicator = document.getElementById('loading-indicator');
-        const transformUI = document.getElementById('transform-controls-ui');
-        const moveBtn = document.getElementById('move-btn');
-        const rotateBtn = document.getElementById('rotate-btn');
-        const outlineColorPicker = document.getElementById('outline-color-picker');
-
-        // --- FILE LOADING ---
-        const loader = new GLTFLoader();
-        fileInput.addEventListener('change', (event) => {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            loadingIndicator.style.display = 'block';
-            transformControls.detach();
-
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                loader.parse(e.target.result, '', (gltf) => {
-                    if (currentModel) {
-                        scene.remove(currentModel);
-                    }
-                    currentModel = gltf.scene;
-
-                    const box = new THREE.Box3().setFromObject(currentModel);
-                    const center = box.getCenter(new THREE.Vector3());
-                    currentModel.position.sub(center); 
-                    
-                    const size = box.getSize(new THREE.Vector3());
-                    const maxDim = Math.max(size.x, size.y, size.z);
-                    const scale = 5 / maxDim;
-                    currentModel.scale.setScalar(scale);
-                    
-                    scene.add(currentModel);
-                    
-                    outlinePass.selectedObjects = [currentModel];
-
-                    loadingIndicator.style.display = 'none';
-                }, (error) => {
-                    console.error('An error happened during parsing', error);
-                    alert('Error loading model. Check console for details.');
-                    loadingIndicator.style.display = 'none';
-                });
-            };
-            reader.readAsArrayBuffer(file);
-        });
-
-        // --- INTERACTION ---
-        transformControls.addEventListener('dragging-changed', (event) => {
-            orbitControls.enabled = !event.value;
-        });
-
-        moveBtn.addEventListener('click', () => {
-            transformControls.setMode('translate');
-            moveBtn.classList.add('active');
-            rotateBtn.classList.remove('active');
-        });
-
-        rotateBtn.addEventListener('click', () => {
-            transformControls.setMode('rotate');
-            rotateBtn.classList.add('active');
-            moveBtn.classList.remove('active');
-        });
-        
-        // New event listener for the color picker
-        outlineColorPicker.addEventListener('input', (event) => {
-            outlinePass.visibleEdgeColor.set(event.target.value);
-        });
-
-        function onPointerDown(event) {
-            pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
-            pointer.y = - (event.clientY / window.innerHeight) * 2 + 1;
-
-            raycaster.setFromCamera(pointer, camera);
-            const intersects = raycaster.intersectObject(scene, true);
-
-            if (intersects.length > 0 && intersects[0].object.isMesh && currentModel && currentModel.getObjectById(intersects[0].object.id)) {
-                transformControls.attach(currentModel);
-                transformUI.style.display = 'flex';
-            } else {
-                transformControls.detach();
-                transformUI.style.display = 'none';
-            }
-        }
-        window.addEventListener('pointerdown', onPointerDown);
-
-
-        // --- RENDER LOOP ---
-        function animate() {
-            requestAnimationFrame(animate);
-            orbitControls.update();
-            composer.render();
-        }
-
-        // --- RESIZE HANDLING ---
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            composer.setSize(window.innerWidth, window.innerHeight);
-            effectFXAA.uniforms['resolution'].value.set(1 / window.innerWidth, 1 / window.innerHeight);
-        }, false);
-
-        animate();
-    </script>
+  <!-- App -->
+  <script type="module" src="main.js"></script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
