@@ -3,27 +3,37 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Three.js Character + Third-Person (Continuous Forward)</title>
+  <title>Three.js Character Controller</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <div id="error-banner"></div>
 
-
-
   <div id="joystick-region">
     <div id="joystick-pad"></div>
-</div>
+  </div>
 
-<div id="animations-panel">
-    
-    <h3>Animations</h3>
-    <p>Hold Up: continuous walk • Tap Left/Right/Down: step once • Space: Jump</p>
-    <button id="close-panel-btn">✕ Close Controls</button>
-
+  <audio id="background-music" loop></audio>
+  <div id="music-player-container">
+    <div id="player-header">
+        <span id="song-name">No song selected</span>
+        <button id="toggle-music-btn">Hide</button>
     </div>
-
-  <!-- Import map for Three.js & addons -->
+    <div id="music-controls">
+        <div id="timeline-container">
+            <span id="current-time">0:00</span>
+            <progress id="timeline" value="0" max="100"></progress>
+            <span id="total-duration">0:00</span>
+        </div>
+        <div id="button-container">
+            <button id="prev-btn">Previous</button>
+            <button id="play-btn">Play</button>
+            <button id="pause-btn">Pause</button>
+            <button id="next-btn">Next</button>
+        </div>
+    </div>
+  </div>
+  
   <script type="importmap">
   {
     "imports": {
@@ -33,16 +43,6 @@
   }
   </script>
 
-  <!-- App -->
   <script type="module" src="main.js"></script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
