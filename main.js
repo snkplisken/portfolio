@@ -91,51 +91,63 @@ function formatTime(seconds) {
   return `${minutes}:${secs < 10 ? '0' : ''}${secs}`;
 }
 
-function loadSong(songIndex) {
+function loadSong(songIndex, autoplay = true) {
   const music = document.getElementById('background-music');
   const songNameEl = document.getElementById('song-name');
   let displayName = playlist[songIndex].replace('.mp3', '').replace(/_/g, ' ').replace(/-/g, ' ');
   if (songNameEl) songNameEl.textContent = displayName;
   music.src = playlist[songIndex];
-  music.play();
+  music.load();
+
+  if (autoplay) {
+    const playPromise = music.play();
+    if (playPromise !== undefined) {
+      playPromise.catch((err) => {
+        console.warn('Autoplay was prevented by the browser. Music will start after user interaction.', err);
+        const resumePlayback = () => {
+          const resumedPromise = music.play();
+          if (resumedPromise !== undefined) {
+            resumedPromise.catch((error) => console.warn('Playback failed after user interaction.', error));
+          }
+          document.removeEventListener('pointerdown', resumePlayback);
+          document.removeEventListener('keydown', resumePlayback);
+        };
+        document.addEventListener('pointerdown', resumePlayback);
+        document.addEventListener('keydown', resumePlayback);
+      });
+    }
+  }
 }
 
 function setupMusicPlayer() {
   const music = document.getElementById('background-music');
-  const playBtn = document.getElementById('play-btn');
-  const pauseBtn = document.getElementById('pause-btn');
-  const nextBtn = document.getElementById('next-btn');
-  const prevBtn = document.getElementById('prev-btn');
   const timeline = document.getElementById('timeline');
   const currentTimeEl = document.getElementById('current-time');
   const totalDurationEl = document.getElementById('total-duration');
   const musicControls = document.getElementById('music-controls');
   const toggleBtn = document.getElementById('toggle-music-btn');
+  const muteBtn = document.getElementById('mute-btn');
 
-  if (!music || !playBtn || !pauseBtn || !nextBtn || !prevBtn || !timeline || !currentTimeEl || !totalDurationEl || !musicControls || !toggleBtn) {
+  if (!music || !timeline || !currentTimeEl || !totalDurationEl || !musicControls || !toggleBtn || !muteBtn) {
     console.warn("Music player HTML missing elements.");
     return;
   }
 
   music.volume = 0.3;
-
-  playBtn.addEventListener('click', () => {
-    if (!music.src) loadSong(currentSongIndex);
-    else music.play();
-  });
-  pauseBtn.addEventListener('click', () => music.pause());
-  nextBtn.addEventListener('click', () => {
-    currentSongIndex = (currentSongIndex + 1) % playlist.length;
-    loadSong(currentSongIndex);
-  });
-  prevBtn.addEventListener('click', () => {
-    currentSongIndex = (currentSongIndex - 1 + playlist.length) % playlist.length;
-    loadSong(currentSongIndex);
-  });
+  muteBtn.textContent = music.muted ? 'Unmute' : 'Mute';
 
   toggleBtn.addEventListener('click', () => {
     musicControls.classList.toggle('hidden');
     toggleBtn.textContent = musicControls.classList.contains('hidden') ? 'Show' : 'Hide';
+  });
+
+  muteBtn.addEventListener('click', () => {
+    music.muted = !music.muted;
+    muteBtn.textContent = music.muted ? 'Unmute' : 'Mute';
+  });
+
+  music.addEventListener('volumechange', () => {
+    muteBtn.textContent = music.muted ? 'Unmute' : 'Mute';
   });
 
   music.addEventListener('loadedmetadata', () => {
@@ -154,4 +166,11 @@ function setupMusicPlayer() {
     const pct = clickPosition / timelineWidth;
     music.currentTime = music.duration * pct;
   });
+
+  music.addEventListener('ended', () => {
+    currentSongIndex = (currentSongIndex + 1) % playlist.length;
+    loadSong(currentSongIndex);
+  });
+
+  loadSong(currentSongIndex);
 }
