@@ -17,7 +17,7 @@ export const state = {
   
   // Input states
   keysPressed: {},
-  mobileInput: { forward: 0, turn: 0, shift: false, punch: false, interact: false },
+  mobileInput: { forward: 0, turn: 0, shift: false, punch: false, interact: false, jump: false },
   
   // Game world and physics
   collidableObjects: [],

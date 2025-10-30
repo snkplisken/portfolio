@@ -6,13 +6,51 @@ const { JUMP, PUNCH } = CONFIG.ANIMATION;
 
 // This function can remain separate or be part of the controller
 function isMobileInputActive() {
-  return state.mobileInput.forward !== 0 || state.mobileInput.turn !== 0 || state.mobileInput.shift || state.mobileInput.punch || state.mobileInput.interact;
+  return (
+    state.mobileInput.forward !== 0 ||
+    state.mobileInput.turn !== 0 ||
+    state.mobileInput.shift ||
+    state.mobileInput.punch ||
+    state.mobileInput.interact ||
+    state.mobileInput.jump
+  );
 }
 
 // Mobile joystick logic, mostly self-contained
 function initializeMobileInput() {
   const joystickRegion = document.getElementById('joystick-region');
   const joystickPad = document.getElementById('joystick-pad');
+  const jumpButton = document.getElementById('jump-button');
+
+  if (jumpButton) {
+    const onJumpPress = (event) => {
+      event.preventDefault();
+      if (state.jumpLocked || state.mobileInput.jump) return;
+      if (animationManager.playOnceSafe(JUMP)) {
+        animationManager.setJumpLockByClip(JUMP);
+        state.mobileInput.jump = true;
+      }
+    };
+
+    const onJumpRelease = () => {
+      state.mobileInput.jump = false;
+    };
+
+    if (window.PointerEvent) {
+      jumpButton.addEventListener('pointerdown', onJumpPress, { passive: false });
+      jumpButton.addEventListener('pointerup', onJumpRelease);
+      jumpButton.addEventListener('pointerleave', onJumpRelease);
+      jumpButton.addEventListener('pointercancel', onJumpRelease);
+    } else {
+      jumpButton.addEventListener('touchstart', onJumpPress, { passive: false });
+      jumpButton.addEventListener('touchend', onJumpRelease);
+      jumpButton.addEventListener('touchcancel', onJumpRelease);
+      jumpButton.addEventListener('mousedown', onJumpPress);
+      jumpButton.addEventListener('mouseup', onJumpRelease);
+      jumpButton.addEventListener('mouseleave', onJumpRelease);
+    }
+  }
+
   if (!joystickRegion || !joystickPad) return;
 
   const maxDistance = 75;
