@@ -4,11 +4,11 @@ export const CONFIG = {
   MODEL_URL: 'jump3.glb',
   ENVIRONMENT_URL: 'enviorment2.glb',
   ANIMATION: {
-    IDLE: 'idle',
+    IDLE: 'idle.001',
     WALK: 'walk',
     RUN: 'Running',
     WALK_BACK: 'walk backwards',
-    JUMP: 'Jump',
+    JUMP: 'jump',
     PUNCH: 'punch',
     LEFT: 'left',
     RIGHT: 'right',
