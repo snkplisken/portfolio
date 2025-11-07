@@ -122,6 +122,15 @@ export const world = {
         state.character.position.y = state.envGroundY + 0.2;
 
         state.model = gltf.scene;
+
+        // Normalize the character so its feet sit at y = 0 regardless of how the
+        // GLB was authored. This keeps different models from spawning below the
+        // ground plane when their pivot is centered elsewhere.
+        const modelBox = new THREE.Box3().setFromObject(state.model);
+        if (Number.isFinite(modelBox.min.y) && modelBox.min.y !== 0) {
+          state.model.position.y -= modelBox.min.y;
+        }
+
         state.character.add(state.model);
 
         state.mixer = new THREE.AnimationMixer(state.model);
