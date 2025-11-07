@@ -128,6 +128,31 @@ export const world = {
         state.character.position.set(0, state.envGroundY + SPAWN_RAY_HEIGHT, 0);
 
         state.model = gltf.scene;
+
+        // Normalize the character so its feet sit at y = 0 regardless of how the
+        // GLB was authored. This keeps different models from spawning below the
+        // ground plane when their pivot is centered elsewhere. We compute the
+        // bounds manually so skinned meshes with bones or nested offsets are
+        // handled consistently.
+        const aggregateBox = new THREE.Box3();
+        const childBox = new THREE.Box3();
+
+        state.model.updateWorldMatrix(true, true);
+        state.model.traverse((child) => {
+          if (!child.isMesh || !child.geometry) return;
+
+          if (!child.geometry.boundingBox) child.geometry.computeBoundingBox();
+          if (!child.geometry.boundingBox) return;
+
+          childBox.copy(child.geometry.boundingBox).applyMatrix4(child.matrixWorld);
+          aggregateBox.union(childBox);
+        });
+
+        if (!aggregateBox.isEmpty() && Number.isFinite(aggregateBox.min.y)) {
+          state.model.position.y -= aggregateBox.min.y;
+          state.model.updateWorldMatrix(true, true);
+        }
+
         state.character.add(state.model);
 
         state.mixer = new THREE.AnimationMixer(state.model);

@@ -9,6 +9,7 @@ import { characterController } from './characterController.js';
 const tmpV3 = new THREE.Vector3();
 const playlist = ['A$AP Rocky - Palace.mp3', 'Unkown - What I Wouldnt Give.mp3', 'song3.mp3'];
 let currentSongIndex = 0;
+const playerCoordsEl = document.getElementById('player-coords');
 
 // --- Main Application Setup and Loop ---
 
@@ -39,12 +40,25 @@ function animate() {
   world.update(delta);
   characterController.update(delta);
   updateCameraChase();
+  updatePlayerCoordsOverlay();
 
   if (state.controls) state.controls.update();
 
   // Render the scene
   if (state.renderer && state.scene && state.camera) {
     state.renderer.render(state.scene, state.camera);
+  }
+}
+
+function updatePlayerCoordsOverlay() {
+  if (!playerCoordsEl) return;
+
+  if (state.character) {
+    const { x, y, z } = state.character.position;
+    const groundY = Number.isFinite(state.envGroundY) ? state.envGroundY.toFixed(2) : 'n/a';
+    playerCoordsEl.textContent = `Player XYZ: ${x.toFixed(2)}, ${y.toFixed(2)}, ${z.toFixed(2)} | Ground Y: ${groundY}`;
+  } else {
+    playerCoordsEl.textContent = 'Player XYZ: (loading)';
   }
 }
 
