@@ -3,8 +3,22 @@
 /* ------------------------------------------- */
 body {
     margin: 0;
-    overflow: hidden; 
+    overflow: hidden;
     font-family: Arial, sans-serif;
+}
+
+.debug-overlay {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    padding: 6px 10px;
+    background-color: rgba(0, 0, 0, 0.6);
+    color: #fff;
+    font-size: 13px;
+    font-family: monospace;
+    border-radius: 4px;
+    z-index: 1200;
+    pointer-events: none;
 }
 
 /* ------------------------------------------- */
