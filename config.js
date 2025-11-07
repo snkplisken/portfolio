@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
 export const CONFIG = {
-  MODEL_URL: 'jump2.glb',
+  MODEL_URL: 'jump3.glb',
   ENVIRONMENT_URL: 'enviorment2.glb',
   ANIMATION: {
     IDLE: 'idle',
