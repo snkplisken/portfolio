@@ -8,6 +8,10 @@ import { animationManager } from './animationManager.js';
 // Module-scoped variables
 const loader = new GLTFLoader();
 const tmpV3 = new THREE.Vector3(); // Used for temp calculations
+const groundRaycaster = new THREE.Raycaster();
+const DOWN = new THREE.Vector3(0, -1, 0);
+const SPAWN_RAY_HEIGHT = 5;
+const SPAWN_CLEARANCE = 0.02;
 let fogParticles = [];
 
 function showError(msg) {
@@ -106,6 +110,8 @@ export const world = {
 
         const bbox = new THREE.Box3().setFromObject(environment);
         state.envGroundY = Number.isFinite(bbox.min.y) ? bbox.min.y : 0.0;
+
+        if (state.character) this.snapCharacterToGround();
       },
       undefined,
       (err) => showError('Failed to load environment GLTF: ' + err)
@@ -119,7 +125,7 @@ export const world = {
         state.character = new THREE.Group();
         state.scene.add(state.character);
         state.character.rotation.y = Math.PI;
-        state.character.position.y = state.envGroundY + 0.2;
+        state.character.position.set(0, state.envGroundY + SPAWN_RAY_HEIGHT, 0);
 
         state.model = gltf.scene;
         state.character.add(state.model);
@@ -134,10 +140,27 @@ export const world = {
         if (state.animationsMap.has(IDLE)) animationManager.playLoop(IDLE);
         else if (state.animationsMap.has(WALK)) animationManager.playLoop(WALK);
         else if (gltf.animations[0]) animationManager.playLoop(gltf.animations[0].name);
+
+        this.snapCharacterToGround();
       },
       undefined,
       (err) => showError('Failed to load character model: ' + err)
     );
+  },
+
+  snapCharacterToGround() {
+    if (!state.character) return;
+
+    const origin = state.character.position.clone();
+    origin.y += SPAWN_RAY_HEIGHT;
+
+    groundRaycaster.set(origin, DOWN);
+    const intersections = groundRaycaster.intersectObjects(state.collidableObjects, true);
+
+    const fallbackY = state.envGroundY + SPAWN_CLEARANCE;
+    const groundY = intersections.length > 0 ? intersections[0].point.y + SPAWN_CLEARANCE : fallbackY;
+
+    state.character.position.y = groundY;
   },
 
   createFogParticles() {
